@@ -51,8 +51,9 @@ export class AppService {
 
   private isArmstrong(num: number): boolean {
     const newNum = Number(num);
+    const absNum = Math.abs(newNum);
     // Convert to string once
-    const numStr = num.toString();
+    const numStr = absNum.toString();
     // Get the number of digits
     const power = numStr.length;
     // Calculate sum of each digit raised to power
@@ -62,11 +63,13 @@ export class AppService {
     console.log({ sum });
     console.log({ newNum });
     // Compare with original number
-    return sum === newNum;
+    return sum === absNum;
   }
 
   private getDigitSum(num: number): number {
-    return num
+    const newNum = Number(num);
+    const absNum = Math.abs(newNum);
+    return absNum
       .toString()
       .split('')
       .map(Number)
