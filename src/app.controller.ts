@@ -19,8 +19,8 @@ export class AppController {
 
     if (isNaN(number)) {
       throw new BadRequestException({
-        error: true,
         number: numberStr,
+        error: true,
       });
     }
 
