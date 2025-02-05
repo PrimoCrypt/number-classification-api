@@ -19,14 +19,14 @@ export class AppService {
     // Get fun fact from Numbers API
     const funFact = await this.getFunFact(number);
 
-    return {
+    return JSON.stringify({
       number,
       is_prime: this.isPrime(number),
       is_perfect: this.isPerfect(number),
       properties,
       digit_sum: this.getDigitSum(number),
       fun_fact: funFact,
-    };
+    });
   }
 
   private isPrime(num: number): boolean {
