@@ -15,14 +15,13 @@ export class AppController {
   @ApiResponse({ status: 200, type: NumberResponseDto })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
   async classifyNumber(@Query('number') numberStr: string) {
-    const number = parseInt(numberStr);
-
-    if (isNaN(number)) {
+    if (!/^-?\d+$/.test(numberStr)) {
       throw new BadRequestException({
         number: numberStr,
         error: true,
       });
     }
+    const number = parseInt(numberStr);
 
     return this.appService.classifyNumber(number);
   }
