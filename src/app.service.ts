@@ -1,28 +1,37 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import { timeout, catchError } from 'rxjs/operators';
 @Injectable()
 export class AppService {
+  private readonly cache = new Map<number, string>();
+  private readonly cacheTimeout = 3600000; // 1 hour in milliseconds
+
   constructor(private readonly httpService: HttpService) {}
 
   async classifyNumber(number: number) {
     const properties = [];
 
+    const [isPrime, isPerfect, isArmstrongNum, funFact] = await Promise.all([
+      this.isPrime(number),
+      this.isPerfect(number),
+      this.isArmstrong(number),
+      this.getFunFact(number),
+    ]);
+
     // Check if number is Armstrong
-    if (this.isArmstrong(number)) {
+    if (isArmstrongNum) {
       properties.push('armstrong');
     }
 
-    // Check if number is odd/even
     properties.push(number % 2 === 0 ? 'even' : 'odd');
 
     // Get fun fact from Numbers API
-    const funFact = await this.getFunFact(number);
 
     return {
       number,
-      is_prime: this.isPrime(number),
-      is_perfect: this.isPerfect(number),
+      is_prime: isPrime,
+      is_perfect: isPerfect,
       properties,
       digit_sum: this.getDigitSum(number),
       fun_fact: funFact,
@@ -60,8 +69,6 @@ export class AppService {
     const sum = numStr
       .split('')
       .reduce((acc, digit) => acc + Math.pow(parseInt(digit), power), 0);
-    console.log({ sum });
-    console.log({ newNum });
     // Compare with original number
     return sum === absNum;
   }
@@ -77,11 +84,31 @@ export class AppService {
   }
 
   private async getFunFact(num: number): Promise<string> {
+    const cached = this.cache.get(num);
+    if (cached) {
+      return cached;
+    }
+
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`http://numbersapi.com/${num}/math`),
+        this.httpService.get(`http://numbersapi.com/${num}/math`).pipe(
+          timeout(2000), // 2 second timeout
+          catchError(() => {
+            return Promise.resolve({ data: `${num} is a number.` });
+          }),
+        ),
       );
-      return response.data;
+
+      const fact = response.data;
+      // Cache the result
+      this.cache.set(num, fact);
+
+      // Clear cache after timeout
+      setTimeout(() => {
+        this.cache.delete(num);
+      }, this.cacheTimeout);
+
+      return fact;
     } catch {
       return `${num} is a number.`;
     }
